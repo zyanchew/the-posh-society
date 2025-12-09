@@ -1,0 +1,122 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Category {
+  pants
+  polo_shirt
+  t_shirt
+  shirt
+  sweater
+  cardigan
+  cap
+  others
+}
+
+enum ProductStatus {
+  active
+  inactive
+  draft
+}
+
+enum VariantStatus {
+  active
+  inactive
+}
+
+model Order {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerName  String
+  customerEmail String
+  customerPhone String
+  customerAddress String
+  shippingCents Int         @default(0)
+  totalCents    Int
+  createdAt     DateTime    @default(now())
+
+  items OrderItem[]
+
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId          String   @db.Uuid
+  productId        String?  @db.Uuid
+  productTitle     String
+  productPriceCents Int
+  quantity         Int
+  variantColor     String?
+  variantSize      String?
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Product {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  slug        String        @unique
+  description String? // optional tends to be nicer in admin flows
+  basePrice   Decimal       @db.Decimal(10, 2)
+  currency    String        @default("MYR") @db.VarChar(3)
+  status      ProductStatus @default(active)
+  category    Category
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  variants ProductVariant[]
+  images   Image[]
+  orderItems OrderItem[]
+
+  @@index([status])
+}
+
+model ProductVariant {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId String        @db.Uuid
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color     String?
+  size      String?
+  stock     Int           @default(0)
+  status    VariantStatus @default(active)
+  imageUrl  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  images Image[]
+
+  // prevent duplicate color/size per product
+  @@unique([productId, color, size], map: "uq_product_color_size")
+  @@index([productId])
+  @@index([status])
+}
+
+model Image {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId String?         @db.Uuid
+  variantId String?         @db.Uuid
+  product   Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+
+  @@index([productId, sortOrder])
+  @@index([variantId])
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
