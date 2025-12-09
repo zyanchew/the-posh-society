@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import CircularGallery from "./CircularGallery";
 
 type ProductRow = {
   id: string;
@@ -88,17 +87,5 @@ export default function Gallery({
     return <div className="grid place-items-center text-sm text-gray-500" style={{ height }}>No products yet.</div>;
   }
 
-  return (
-    <div style={{ height }}>
-      <CircularGallery
-        items={items}
-        bend={bend}
-        textColor={textColor}
-        borderRadius={borderRadius}
-        font={font}
-        scrollSpeed={scrollSpeed}
-        scrollEase={scrollEase}
-      />
-    </div>
-  );
+  
 }
